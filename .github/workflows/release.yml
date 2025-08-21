@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch all history for version calculation
+          fetch-depth: 0
+
+      - name: Determine Version
+        id: version
+        run: |
+          # Get the latest version tag, default to v0.0 if none exists
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "v0.0")
+          LATEST_TAG=${LATEST_TAG:-v0.0}
+          
+          # Extract current version numbers
+          MAJOR=$(echo $LATEST_TAG | cut -d. -f1 | sed 's/v//')
+          MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+          
+          # Check commit message for a major version bump
+          if git log -1 --pretty=%B | grep -q -i "version bump"; then
+            NEW_VERSION="v$((MAJOR + 1)).0"
+          else
+            NEW_VERSION="v$MAJOR.$((MINOR + 1))"
+          fi
+          
+          echo "Previous version: $LATEST_TAG"
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Update Manifest Version
+        run: |
+          # Get the version number without the 'v' prefix
+          VERSION_NUMBER=$(echo "${{ steps.version.outputs.new_version }}" | sed 's/v//')
+          
+          # Use sed to replace the version in manifest.json
+          sed -i 's/"version": ".*"/"version": "'"$VERSION_NUMBER"'"/' manifest.json
+          
+          echo "manifest.json updated to version $VERSION_NUMBER"
+          cat manifest.json
+
+      - name: Package Extension
+        run: |
+          zip -r nutab-extension.zip \
+            manifest.json \
+            popup.html \
+            popup.js \
+            options.html \
+            options.js \
+            newtab.html \
+            newtab.js \
+            images/
+
+      - name: Create and Publish Release
+        run: |
+          gh release create "${{ steps.version.outputs.new_version }}" \
+            --title "Release ${{ steps.version.outputs.new_version }}" \
+            --notes "New release" \
+            --target ${{ github.sha }} \
+            nutab-extension.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Commit manifest.json update
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add manifest.json
+          git commit -m "chore: Bump version to ${{ steps.version.outputs.new_version }} [no ci]"
+          git push

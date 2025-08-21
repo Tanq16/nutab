@@ -12,8 +12,8 @@
         "128": "images/icon-128x128.png"
     }
   },
-  "background": {
-    "service_worker": "background.js"
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
   },
   "options_page": "options.html",
   "icons": {
