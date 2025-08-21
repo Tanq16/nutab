@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Custom New Tab",
-  "version": "1.0",
+  "version": "0.1",
   "description": "Redirects the new tab page to a custom URL.",
   "permissions": ["storage", "tabs"],
   "action": {
