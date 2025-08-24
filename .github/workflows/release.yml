@@ -60,8 +60,7 @@ jobs:
             popup.js \
             options.html \
             options.js \
-            nutab.html \
-            nutab.js \
+            background.js \
             images/
 
       - name: Create and Publish Release
