@@ -3,7 +3,7 @@
   "name": "Custom New Tab",
   "version": "0.3",
   "description": "Redirects the new tab page to a custom URL.",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "background"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -12,8 +12,8 @@
         "128": "images/icon-128x128.png"
     }
   },
-  "chrome_url_overrides": {
-    "newtab": "nutab.html"
+  "background": {
+    "service_worker": "background.js"
   },
   "options_page": "options.html",
   "icons": {
